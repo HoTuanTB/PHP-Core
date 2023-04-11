@@ -292,7 +292,7 @@ class BaseModel
     public function connectDatabase()
     {
         $host = 'mysql';
-        $db = 'day4';
+        $db = 'main';
         $user = 'root';
         $pass = 'root';
         $port = "3306";

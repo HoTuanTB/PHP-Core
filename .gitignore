@@ -1,0 +1,9 @@
+/.data
+/docker-compose.yml
+/nginx.default.conf
+/supervisord-dev.conf
+/Makefile
+/Dockerfile
+.idea
+
+
