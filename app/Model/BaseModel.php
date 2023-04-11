@@ -22,6 +22,10 @@ class BaseModel
 
     private $join = [];
 
+    private $dataWhere;
+
+    private $sql;
+
 
     public function __construct()
     {
@@ -152,6 +156,65 @@ class BaseModel
 
     public function get()
     {
+        $this->query();
+        $stmt = $this->pdo->prepare($this->sql);
+        $stmt->execute($this->dataWhere);
+        $products = $stmt->fetchAll(\PDO::FETCH_OBJ);
+
+        echo "<pre>";
+        print_r($products);
+        die();
+
+
+    }
+
+    public function first()
+    {
+        $this->query();
+        $stmt = $this->pdo->prepare($this->sql);
+        $stmt->execute($this->dataWhere);
+        $products = $stmt->fetch(\PDO::FETCH_ORI_FIRST);
+        echo "<pre>";
+        print_r($products);
+        die();
+    }
+
+    public function find($valuePrimaryKeys, $select = '*')
+    {
+        $tableName = $this->table;
+        $query = "SHOW KEYS FROM $tableName WHERE Key_name = 'PRIMARY'";
+        $result = $this->pdo->query($query);
+        $primaryKeyArray = $result->fetch(\PDO::FETCH_ASSOC);
+        $primaryKey = $primaryKeyArray['Column_name'];
+        $queryPrimary = [];
+        $keysbind = [];
+        if (is_array($valuePrimaryKeys)) {
+            foreach ($valuePrimaryKeys as $key => $valuePrimaryKey) {
+                $queryPrimary[] = "$primaryKey = :$key";
+                $keysbind[] = $valuePrimaryKey;
+            }
+
+            $queryPrimaryOr = implode(' OR ', $queryPrimary);
+            $sql = "SELECT * FROM $this->table WHERE $queryPrimaryOr";
+            $stmt = $this->pdo->prepare($sql);
+            foreach ($keysbind as $key => $value) {
+                $stmt->bindValue(':' . $key, $value);
+            }
+        } else {
+            $sql = "SELECT * FROM $this->table WHERE $primaryKey = :id";
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->bindParam(':id', $valuePrimaryKeys, \PDO::PARAM_INT);
+        }
+        $stmt->execute();
+        $products = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        echo "<pre>";
+        print_r($products);
+        die();
+    }
+
+
+    public function query()
+    {
         $dataWhere = [];
         $sql = "SELECT ";
         if ($this->select) {
@@ -185,21 +248,8 @@ class BaseModel
             }
         }
 
-//
-//        echo "<pre>";
-//        print_r($sql);
-//        die();
-
-
-        $stmt = $this->pdo->prepare($sql);
-        $stmt->execute($dataWhere);
-        $products = $stmt->fetchAll(\PDO::FETCH_OBJ);
-
-        echo "<pre>";
-        print_r($products);
-        die();
-
-
+        $this->dataWhere = $dataWhere;
+        $this->sql = $sql;
     }
 
     public function groupBy($groupBy)
@@ -292,7 +342,7 @@ class BaseModel
     public function connectDatabase()
     {
         $host = 'mysql';
-        $db = 'day4';
+        $db = 'main';
         $user = 'root';
         $pass = 'root';
         $port = "3306";

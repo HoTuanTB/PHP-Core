@@ -24,18 +24,36 @@ $productModel = new \Model\Product();
 //    ->where('id', 12)
 //    ->delete();
 
-$data = $productModel
-    ->select('name')
-    ->join("product_tag", "products.id=product_tag.product_id")
+//$data = $productModel
+//    ->select('name')
+//    ->join("product_tag", "products.id=product_tag.product_id")
 //    ->where('id', 16)
 //    ->orderBy("name")
 //    ->having("tuan")
 //    ->groupBy("name")
 //    ->limit(2, 2)
-    ->get();
+//    ->get();
+//echo "<pre>";
+//print_r($data);
+
+// first()
+
+
+//$data = $productModel
+//    ->select('*')
+//    ->where('name','sanpham1')
+//    ->first();
+//echo "<pre>";
+//print_r($data);
+
+
+// find()
+
+
+$data = $productModel
+    ->find([2,4]);
 echo "<pre>";
 print_r($data);
 
-// first()
-// find()
-//
+
+//https://www.ibm.com/docs/en/db2/9.7?topic=rqrs-fetching-rows-columns-from-result-sets
