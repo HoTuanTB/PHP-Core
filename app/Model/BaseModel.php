@@ -26,6 +26,20 @@ class BaseModel
 
     private $sql;
 
+    private $attribute;
+
+    protected $getName;
+
+//    public function __set($name, $value)
+//    {
+//        $this->attribute [$name] = $value;
+//    }
+
+    public function __get($name)
+    {
+        $this->$name();
+    }
+
 
     public function __construct()
     {
@@ -212,6 +226,51 @@ class BaseModel
         die();
     }
 
+    public function save()
+    {
+        $filable = $this->getFilable();
+        foreach ($filable as $key => $value) {
+            $functionGet = "get" . ucfirst($value);
+            $attribute[$value] = $this->$functionGet();
+        }
+
+        $this->insert($attribute);
+    }
+
+    public function whereArray($conditionArrays)
+    {
+//        var_dump(count($conditionArrays));
+//        die();
+//        if (is_array($conditionArrays) && count($conditionArrays) == 1) {
+//            $conditionArrays = [$conditionArrays];
+//        }
+
+//        echo "<pre>";
+//        print_r($conditionArrays);
+//        die();
+
+        foreach ($conditionArrays as $key => $conditionArray) {
+            $this->where[] = [
+                'column' => $conditionArray[0],
+                'operator' => $conditionArray[1],
+                'value' => $conditionArray[2],
+            ];
+        }
+        return $this;
+    }
+
+    public function hasMany($tableClass, $foreign)
+    {
+        $class = new $tableClass();
+        var_dump($class->table);
+        die();
+    }
+
+
+    public function with($modelRelation)
+    {
+        return $this->$modelRelation();
+    }
 
     public function query()
     {
