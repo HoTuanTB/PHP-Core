@@ -26,6 +26,20 @@ class BaseModel
 
     private $sql;
 
+    private $attribute;
+
+    protected $getName;
+
+//    public function __set($name, $value)
+//    {
+//        $this->attribute [$name] = $value;
+//    }
+
+    public function __get($name)
+    {
+        $this->$name();
+    }
+
 
     public function __construct()
     {
@@ -212,6 +226,86 @@ class BaseModel
         die();
     }
 
+    public function save()
+    {
+        $filable = $this->getFilable();
+        foreach ($filable as $key => $value) {
+            $functionGet = "get" . ucfirst($value);
+            $attribute[$value] = $this->$functionGet();
+        }
+
+        $this->insert($attribute);
+    }
+
+    public function whereArray($conditionArrays)
+    {
+//        var_dump(count($conditionArrays));
+//        die();
+//        if (is_array($conditionArrays) && count($conditionArrays) == 1) {
+//            $conditionArrays = [$conditionArrays];
+//        }
+
+//        echo "<pre>";
+//        print_r($conditionArrays);
+//        die();
+
+        foreach ($conditionArrays as $key => $conditionArray) {
+            $this->where[] = [
+                'column' => $conditionArray[0],
+                'operator' => $conditionArray[1],
+                'value' => $conditionArray[2],
+            ];
+        }
+        return $this;
+    }
+
+    public function test()
+    {
+        // 3 category -> N -> N + 1 -> 2
+        $sqlCategory = "SELECT * FROM category";
+        $stmt = $this->pdo->prepare($sqlCategory);
+        $stmt->execute();
+        // thuc thi sql
+        $categories = $stmt->fetchAll(PDO::FETCH_OBJ);
+        // lay id chinh de query sang bang phu
+        $idCategorys = [];
+        foreach ($categories as $categoryItem) {
+            $idCategorys[] = $categoryItem->id;
+        }
+        $idCategorysIn = implode(', ', $idCategorys);
+        // query lay data bang phu
+        $sqlProducts = "SELECT * FROM products WHERE category_id IN ($idCategorysIn)";
+        $stmt = $this->pdo->prepare($sqlProducts);
+        $stmt->execute();
+        // thuc thi sql
+        $products = $stmt->fetchAll(PDO::FETCH_OBJ);
+        // chan hoa du lieu
+        $productGroup = [];
+        foreach ($products as $productItem) {
+            $key = $productItem->category_id;
+            $productGroup[$key][] = $productItem;
+        }
+        foreach ($categories as $categoryItem) {
+            $categoryItem->product = $productGroup[$categoryItem->id];
+        }
+        echo "<pre>";
+        print_r($categories);
+        echo "<hr/>";
+    }
+
+    public function hasMany($tableClass, $foreign)
+    {
+        $class = new $tableClass();
+        var_dump($class->table);
+        die();
+        // xu li them o day
+    }
+
+
+    public function with($modelRelation)
+    {
+        return $this->$modelRelation();
+    }
 
     public function query()
     {
