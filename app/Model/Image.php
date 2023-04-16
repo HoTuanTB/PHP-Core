@@ -7,7 +7,7 @@ require(__DIR__ . '/BaseModel.php');
 class Image extends BaseModel
 {
 
-    private $table = 'images';
+//    private $table = 'images';
 
 
     private $decription;

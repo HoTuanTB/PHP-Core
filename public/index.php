@@ -50,10 +50,32 @@ $productModel = new \Model\Product();
 // find()
 
 
-$data = $productModel
-    ->find([2,4]);
-echo "<pre>";
-print_r($data);
+//$data = $productModel
+//    ->find([2,4]);
+//echo "<pre>";
+//print_r($data);
 
 
-//https://www.ibm.com/docs/en/db2/9.7?topic=rqrs-fetching-rows-columns-from-result-sets
+// save
+//$productModel->name = "ho duc tuan";
+//$productModel->price = 2041;
+//$productModel->save();
+
+//$productModel->setName('day laf product');
+//$productModel->save();
+
+// xu li mang
+//
+//$productModel->whereArray(
+//    [
+//        ['id', '=', '1']
+//    ]
+//)->select('*')->get();
+
+
+/// eager loading
+
+//$productModel->comments();
+
+
+$productModel->select('*')->with('comments')->get();
