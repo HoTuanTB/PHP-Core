@@ -1,7 +1,12 @@
 <link rel="shortcut icon" href="data:image/x-icon;," type="image/x-icon">
 <?php
-require(__DIR__ . '/../app/Model/Product.php');
-$productModel = new \Model\Product();
+//require(__DIR__ . '/../app/Model/Product.php');
+require(__DIR__ . '/../app/Model/Category.php');
+require(__DIR__ . '/../app/Model/OneToMany.php');
+require(__DIR__ . '/../app/Model/StandardizedData.php');
+//$productModel = new \Model\Product();
+$categoryModel = new \Model\Category();
+
 //$productModel->insertValue([
 //    "name" => "sanpham1",
 //    "price" => 100,
@@ -76,6 +81,15 @@ $productModel = new \Model\Product();
 /// eager loading
 
 //$productModel->comments();
+//$productModel->oneToMany();
+//$productModel->belongsTo();
+//$productModel->manyToMany();
+//$productModel->manyToManyCP();
+
+//$productModel->select('*')->with('comments')->get();
 
 
-$productModel->select('*')->with('comments')->get();
+$data = $categoryModel
+    ->select('*')
+    ->with(['products', 'branchs'])
+    ->get();

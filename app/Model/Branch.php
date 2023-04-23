@@ -3,17 +3,17 @@
 namespace Model;
 
 //require(__DIR__ . '/BaseModel.php');
-require(__DIR__ . '/Comment.php');
+//require(__DIR__ . '/Comment.php');
 
-class Product extends BaseModel
+class Branch extends BaseModel
 {
     private $name;
     private $filable = [
         'name',
-//        'price,'
     ];
+
     protected $primaryKey = 'id';
-    protected $table = 'products';
+    protected $table = 'branchs';
 
     public function getFilable()
     {
@@ -30,8 +30,4 @@ class Product extends BaseModel
         return $this->name;
     }
 
-    public function comments()
-    {
-        $this->hasMany(Comment::class, 'comment_id');
-    }
 }

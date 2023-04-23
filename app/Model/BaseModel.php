@@ -30,6 +30,8 @@ class BaseModel
 
     protected $getName;
 
+    private $oneToMany = [];
+
 //    public function __set($name, $value)
 //    {
 //        $this->attribute [$name] = $value;
@@ -173,13 +175,25 @@ class BaseModel
         $this->query();
         $stmt = $this->pdo->prepare($this->sql);
         $stmt->execute($this->dataWhere);
-        $products = $stmt->fetchAll(\PDO::FETCH_OBJ);
+        $dataMain = $stmt->fetchAll(\PDO::FETCH_OBJ);
+        $rules = $this->oneToMany;
+        if ($this->oneToMany) {
+            foreach ($rules as $rule) {
+                $oneToMany = new \HasOneToMany();
+                $dataRelation = $oneToMany->oneToMany($dataMain, $rule, $this->pdo);
+                $normalData = new \HasStandardizedData();
+                $data = $normalData->standardizedData($dataRelation, $dataMain, $rule);
+            }
+        }
+//        if ($this->oneToMany) {
+//            $oneToMany = new \HasOneToMany();
+//            $dataRelation = $oneToMany->oneToMany($dataMain, $this->oneToMany, $this->pdo);
+//            $normalData = new \HasStandardizedData();
+//            $data = $normalData->standardizedData($dataRelation, $dataMain, $this->oneToMany);
+//        }
 
         echo "<pre>";
-        print_r($products);
-        die();
-
-
+        print_r($data);
     }
 
     public function first()
@@ -259,52 +273,131 @@ class BaseModel
         return $this;
     }
 
-    public function test()
+    public function oneToMany()
     {
-        // 3 category -> N -> N + 1 -> 2
-        $sqlCategory = "SELECT * FROM category";
-        $stmt = $this->pdo->prepare($sqlCategory);
+        $categoriesSql = "SELECT * FROM category";
+        $stmt = $this->pdo->prepare($categoriesSql);
         $stmt->execute();
-        // thuc thi sql
-        $categories = $stmt->fetchAll(PDO::FETCH_OBJ);
-        // lay id chinh de query sang bang phu
-        $idCategorys = [];
-        foreach ($categories as $categoryItem) {
-            $idCategorys[] = $categoryItem->id;
+        $categories = $stmt->fetchAll(\PDO::FETCH_OBJ);
+        $categoryId = [];
+        foreach ($categories as $categoryItems) {
+            $categoryId[] = $categoryItems->id;
         }
-        $idCategorysIn = implode(', ', $idCategorys);
-        // query lay data bang phu
-        $sqlProducts = "SELECT * FROM products WHERE category_id IN ($idCategorysIn)";
-        $stmt = $this->pdo->prepare($sqlProducts);
+
+        $formatCategoryId = implode(", ", $categoryId);
+        $productsSql = "SELECT * FROM products where category_id in ($formatCategoryId) ";
+        $stmt = $this->pdo->prepare($productsSql);
         $stmt->execute();
-        // thuc thi sql
-        $products = $stmt->fetchAll(PDO::FETCH_OBJ);
-        // chan hoa du lieu
-        $productGroup = [];
-        foreach ($products as $productItem) {
-            $key = $productItem->category_id;
-            $productGroup[$key][] = $productItem;
+        $products = $stmt->fetchAll(\PDO::FETCH_OBJ);
+
+        $response = [];
+        foreach ($products as $product) {
+            $categoryId = $product->category_id;
+            $response[$categoryId][] = $product;
         }
+
         foreach ($categories as $categoryItem) {
-            $categoryItem->product = $productGroup[$categoryItem->id];
+            $categoryItem->product = $response[$categoryItem->id];
         }
+
+
         echo "<pre>";
         print_r($categories);
-        echo "<hr/>";
+
+    }
+
+    public function belongsTo()
+    {
+        $productsSql = "SELECT * FROM products";
+        $stmt = $this->pdo->prepare($productsSql);
+        $stmt->execute();
+        $products = $stmt->fetchAll(\PDO::FETCH_OBJ);
+
+        $arrayCategoryId = [];
+        foreach ($products as $product) {
+            $arrayCategoryId[] = $product->category_id;
+        }
+
+        $formatCategoryId = implode(", ", $arrayCategoryId);
+
+        $categoriesSql = "SELECT * FROM category where id in ($formatCategoryId) ";
+        $stmt = $this->pdo->prepare($categoriesSql);
+        $stmt->execute();
+        $categories = $stmt->fetchAll(\PDO::FETCH_OBJ);
+        foreach ($products as $product) {
+            $categoryId = $product->category_id;
+            $product->category = $categories[$categoryId];
+        }
+        echo "<pre>";
+        print_r($products);
+    }
+
+
+    public function manyToMany()
+    {
+        $productsSql = "SELECT * FROM products";
+        $stmt = $this->pdo->prepare($productsSql);
+        $stmt->execute();
+        $products = $stmt->fetchAll(\PDO::FETCH_OBJ);
+        $idProducts = [];
+        foreach ($products as $product) {
+            $idProducts[] = $product->id;
+        }
+
+        $formatProductId = implode(", ", $idProducts);
+
+        $tagsSql = "SELECT * FROM tags INNER JOIN product_tag ON tags.id = product_tag.tag_id WHERE product_tag.product_id IN ($formatProductId)";
+        $stmt = $this->pdo->prepare($tagsSql);
+        $stmt->execute();
+        $tags = $stmt->fetchAll(\PDO::FETCH_OBJ);
+
+        $productIdTag = [];
+
+        foreach ($tags as $tag) {
+            $productIdTag[$tag->product_id][] = $tag;
+        }
+
+        foreach ($products as $product) {
+            $product->tags = $productIdTag[$product->id];
+        }
+
+        echo "<pre>";
+        print_r($products);
+
+    }
+
+    public function manyToManyCP()
+    {
+        $tagsSql = "SELECT * FROM tags";
+        $stmt = $this->pdo->prepare($tagsSql);
+        $stmt->execute();
+        $tags = $stmt->fetchAll(\PDO::FETCH_OBJ);
+        $idTags = [];
+        foreach ($tags as $tag) {
+            $idTags[] = $tag->id;
+        }
+
     }
 
     public function hasMany($tableClass, $foreign)
     {
-        $class = new $tableClass();
-        var_dump($class->table);
-        die();
-        // xu li them o day
+        $classInstance = new $tableClass();
+        $this->oneToMany[] = [
+            'tableRelation' => $classInstance->table,
+            'foreignKey' => $foreign,
+            'primaryKey' => $classInstance->primaryKey
+        ];
+        return $this;
     }
 
 
     public function with($modelRelation)
     {
-        return $this->$modelRelation();
+        foreach ($modelRelation as $modelRelationItem) {
+            $this->$modelRelationItem();
+        }
+
+        return $this;
     }
 
     public function query()
