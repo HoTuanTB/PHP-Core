@@ -4,6 +4,9 @@
 require(__DIR__ . '/../app/Model/Category.php');
 require(__DIR__ . '/../app/Model/OneToMany.php');
 require(__DIR__ . '/../app/Model/StandardizedData.php');
+require(__DIR__ . '/../app/Model/Save.php');
+require(__DIR__ . '/../app/Model/Insert.php');
+require(__DIR__ . '/../app/Model/Get.php');
 //$productModel = new \Model\Product();
 $categoryModel = new \Model\Category();
 

@@ -32,237 +32,68 @@ class BaseModel
 
     private $oneToMany = [];
 
-//    public function __set($name, $value)
-//    {
-//        $this->attribute [$name] = $value;
-//    }
-
     public function __get($name)
     {
         $this->$name();
     }
 
-
     public function __construct()
     {
         $this->connectDatabase();
     }
-
-    public function insert($data)
-    {
-        $columnKey = array_keys($data);
-        $columns = implode(', ', $columnKey);
-        $placeholdersSql = array_map(function ($item) {
-            return ":$item";
-        }, $columnKey);
-        $placeholdersSql = implode(', ', $placeholdersSql);
-        $sql = "INSERT INTO $this->table ($columns) VALUES ($placeholdersSql)";
-        $stmt = $this->pdo->prepare($sql);
-        $dataExecute = $stmt->execute($data);
-        if ($dataExecute) {
-            $isId = $this->pdo->lastInsertId();
-        }
-        if ($isId) {
-            echo $isId;
-//            return $isId;
-        }
-        return false;
-    }
-
     public function insertValue($data)
     {
-        $columnKey = array_keys($data);
-        $columns = implode(', ', $columnKey);
-        $placeholdersSql = [];
-        $value = [];
-        foreach ($data as $values) {
-            $placeholdersSql[] = "?";
-            $value[] = $values;
-        }
-        $placeholdersSql = implode(', ', $placeholdersSql);
-        $sql = "INSERT INTO $this->table ($columns) VALUES ($placeholdersSql)";
-        $stmt = $this->pdo->prepare($sql);
-        $dataExecute = $stmt->execute($value);
-
-
-        if ($dataExecute) {
-            $isId = $this->pdo->lastInsertId();
-        }
-        if ($isId) {
-            echo $isId;
-        }
-        return false;
+        $insertValue = new \InsertValue();
+        return $insertValue->insertValue($data, $this->table, $this->pdo);
     }
 
     public function update($data)
     {
-        $setValue = [];
-        $whereValue = [];
-        $setName = [];
-        $arrayKey = array_keys($data);
-        foreach ($data as $key => $value) {
-            $setValue[] = $value;
-            $setName[] = "$key=?";
-        }
-        $placeholdersSql = implode(', ', $setName);
-        $sql = "UPDATE $this->table SET $placeholdersSql";
-        if ($this->where) {
-            foreach ($this->where as $valueWhere) {
-                $whereValue[] = $valueWhere["column"] . $valueWhere['operator'] . "?";
-                $setValue[] = $valueWhere["value"];
-            }
-            $placeholdersSql = implode('AND', $whereValue);
-            $sql = "UPDATE $this->table SET $placeholdersSql WHERE $placeholdersSql";
-        }
-        $stmt = $this->pdo->prepare($sql)->execute($setValue);
-        if ($stmt) {
-            $isId = $this->pdo->lastInsertId();
-            echo "thanh cong" . $isId;
-        }
-        if ($isId) {
-            echo "that bai";
-        }
-        return false;
+        $update = new \Update();
+        return $update->update($data, $this->table, $this->where, $this->pdo);
     }
 
     public function updateUp($data)
     {
-        $whereValue = [];
-        $setName = [];
-        foreach ($data as $key => $value) {
-            $setName[] = "$key" . '=:' . "$key";
-        }
-
-        $placeholdersSql = implode(', ', $setName);
-        foreach ($this->where as $valueWhere) {
-            $keyWhere = "where_" . $key;
-            $whereValue[] = $valueWhere["column"] . $valueWhere['operator'] . ":" . $keyWhere;
-            $data[$keyWhere] = $valueWhere['value'];
-        }
-        $placeholderValuesSql = implode('AND', $whereValue);
-        $sql = "UPDATE $this->table SET $placeholdersSql WHERE $placeholderValuesSql";
-        $stmt = $this->pdo->prepare($sql)->execute($data);
-
-        if ($stmt) {
-            $isId = $this->pdo->lastInsertId();
-            echo "thanh cong" . $isId;
-        }
-        if ($isId) {
-            echo "that bai";
-        }
-        return false;
+        $update = new \UpdateUp();
+        return $update->updateUp($data, $this->table, $this->where, $this->pdo);
     }
 
     public function delete()
     {
-        foreach ($this->where as $key => $valueWhere) {
-            $keyWhere = "where_" . $key;
-            $whereValue[] = $valueWhere["column"] . $valueWhere['operator'] . ":" . $keyWhere;
-            $data[$keyWhere] = $valueWhere['value'];
-        }
-        $where = implode(' AND ', $whereValue);
-        $sql = "DELETE FROM $this->table WHERE $where";
-        $stmt = $this->pdo->prepare($sql)->execute($data);
-        if ($stmt) {
-            echo "xoa thanh cong";
-        } else {
-            echo "xoa that bai";
-        }
+        $delete = new \Delete();
+        return $delete->delete($this->table, $this->where, $this->pdo);
     }
 
     public function get()
     {
         $this->query();
-        $stmt = $this->pdo->prepare($this->sql);
-        $stmt->execute($this->dataWhere);
-        $dataMain = $stmt->fetchAll(\PDO::FETCH_OBJ);
-        $rules = $this->oneToMany;
-        if ($this->oneToMany) {
-            foreach ($rules as $rule) {
-                $oneToMany = new \HasOneToMany();
-                $dataRelation = $oneToMany->oneToMany($dataMain, $rule, $this->pdo);
-                $normalData = new \HasStandardizedData();
-                $data = $normalData->standardizedData($dataRelation, $dataMain, $rule);
-            }
-        }
-//        if ($this->oneToMany) {
-//            $oneToMany = new \HasOneToMany();
-//            $dataRelation = $oneToMany->oneToMany($dataMain, $this->oneToMany, $this->pdo);
-//            $normalData = new \HasStandardizedData();
-//            $data = $normalData->standardizedData($dataRelation, $dataMain, $this->oneToMany);
-//        }
-
-        echo "<pre>";
-        print_r($data);
+        $get = new \Get();
+        return $get->get($this->pdo, $this->sql, $this->dataWhere, $this->oneToMany);
     }
 
     public function first()
     {
         $this->query();
-        $stmt = $this->pdo->prepare($this->sql);
-        $stmt->execute($this->dataWhere);
-        $products = $stmt->fetch(\PDO::FETCH_ORI_FIRST);
-        echo "<pre>";
-        print_r($products);
-        die();
+        $first = new \First();
+        return $first->first($this->pdo, $this->sql, $this->dataWhere);
     }
 
     public function find($valuePrimaryKeys, $select = '*')
     {
-        $tableName = $this->table;
-        $query = "SHOW KEYS FROM $tableName WHERE Key_name = 'PRIMARY'";
-        $result = $this->pdo->query($query);
-        $primaryKeyArray = $result->fetch(\PDO::FETCH_ASSOC);
-        $primaryKey = $primaryKeyArray['Column_name'];
-        $queryPrimary = [];
-        $keysbind = [];
-        if (is_array($valuePrimaryKeys)) {
-            foreach ($valuePrimaryKeys as $key => $valuePrimaryKey) {
-                $queryPrimary[] = "$primaryKey = :$key";
-                $keysbind[] = $valuePrimaryKey;
-            }
-
-            $queryPrimaryOr = implode(' OR ', $queryPrimary);
-            $sql = "SELECT * FROM $this->table WHERE $queryPrimaryOr";
-            $stmt = $this->pdo->prepare($sql);
-            foreach ($keysbind as $key => $value) {
-                $stmt->bindValue(':' . $key, $value);
-            }
-        } else {
-            $sql = "SELECT * FROM $this->table WHERE $primaryKey = :id";
-            $stmt = $this->pdo->prepare($sql);
-            $stmt->bindParam(':id', $valuePrimaryKeys, \PDO::PARAM_INT);
-        }
-        $stmt->execute();
-        $products = $stmt->fetchAll(\PDO::FETCH_ASSOC);
-        echo "<pre>";
-        print_r($products);
-        die();
+        $find = new \Find();
+        return $find->find($this->table, $this->pdo, $valuePrimaryKeys);
     }
 
     public function save()
     {
         $filable = $this->getFilable();
-        foreach ($filable as $key => $value) {
-            $functionGet = "get" . ucfirst($value);
-            $attribute[$value] = $this->$functionGet();
-        }
-
-        $this->insert($attribute);
+        $save = new \Save();
+        $save->save($filable, $this->table, $this->pdo);
     }
 
     public function whereArray($conditionArrays)
     {
-//        var_dump(count($conditionArrays));
-//        die();
-//        if (is_array($conditionArrays) && count($conditionArrays) == 1) {
-//            $conditionArrays = [$conditionArrays];
-//        }
-
-//        echo "<pre>";
-//        print_r($conditionArrays);
-//        die();
-
         foreach ($conditionArrays as $key => $conditionArray) {
             $this->where[] = [
                 'column' => $conditionArray[0],
@@ -271,6 +102,8 @@ class BaseModel
             ];
         }
         return $this;
+//        $whereArray = new \WhereArray();
+//        $whereArray->whereArray($conditionArrays);
     }
 
     public function oneToMany()
@@ -283,7 +116,6 @@ class BaseModel
         foreach ($categories as $categoryItems) {
             $categoryId[] = $categoryItems->id;
         }
-
         $formatCategoryId = implode(", ", $categoryId);
         $productsSql = "SELECT * FROM products where category_id in ($formatCategoryId) ";
         $stmt = $this->pdo->prepare($productsSql);
@@ -295,90 +127,25 @@ class BaseModel
             $categoryId = $product->category_id;
             $response[$categoryId][] = $product;
         }
-
         foreach ($categories as $categoryItem) {
             $categoryItem->product = $response[$categoryItem->id];
         }
-
-
         echo "<pre>";
         print_r($categories);
-
     }
 
     public function belongsTo()
     {
-        $productsSql = "SELECT * FROM products";
-        $stmt = $this->pdo->prepare($productsSql);
-        $stmt->execute();
-        $products = $stmt->fetchAll(\PDO::FETCH_OBJ);
-
-        $arrayCategoryId = [];
-        foreach ($products as $product) {
-            $arrayCategoryId[] = $product->category_id;
-        }
-
-        $formatCategoryId = implode(", ", $arrayCategoryId);
-
-        $categoriesSql = "SELECT * FROM category where id in ($formatCategoryId) ";
-        $stmt = $this->pdo->prepare($categoriesSql);
-        $stmt->execute();
-        $categories = $stmt->fetchAll(\PDO::FETCH_OBJ);
-        foreach ($products as $product) {
-            $categoryId = $product->category_id;
-            $product->category = $categories[$categoryId];
-        }
-        echo "<pre>";
-        print_r($products);
+        $belongsTo = new \BeLongsTo();
+        return $belongsTo->beLongsTo($this->pdo);
     }
 
 
     public function manyToMany()
     {
-        $productsSql = "SELECT * FROM products";
-        $stmt = $this->pdo->prepare($productsSql);
-        $stmt->execute();
-        $products = $stmt->fetchAll(\PDO::FETCH_OBJ);
-        $idProducts = [];
-        foreach ($products as $product) {
-            $idProducts[] = $product->id;
-        }
-
-        $formatProductId = implode(", ", $idProducts);
-
-        $tagsSql = "SELECT * FROM tags INNER JOIN product_tag ON tags.id = product_tag.tag_id WHERE product_tag.product_id IN ($formatProductId)";
-        $stmt = $this->pdo->prepare($tagsSql);
-        $stmt->execute();
-        $tags = $stmt->fetchAll(\PDO::FETCH_OBJ);
-
-        $productIdTag = [];
-
-        foreach ($tags as $tag) {
-            $productIdTag[$tag->product_id][] = $tag;
-        }
-
-        foreach ($products as $product) {
-            $product->tags = $productIdTag[$product->id];
-        }
-
-        echo "<pre>";
-        print_r($products);
-
+        $manyToMany = new \ManyToMany();
+        return $manyToMany->manyToMany($this->pdo);
     }
-
-    public function manyToManyCP()
-    {
-        $tagsSql = "SELECT * FROM tags";
-        $stmt = $this->pdo->prepare($tagsSql);
-        $stmt->execute();
-        $tags = $stmt->fetchAll(\PDO::FETCH_OBJ);
-        $idTags = [];
-        foreach ($tags as $tag) {
-            $idTags[] = $tag->id;
-        }
-
-    }
-
     public function hasMany($tableClass, $foreign)
     {
         $classInstance = new $tableClass();
@@ -396,7 +163,6 @@ class BaseModel
         foreach ($modelRelation as $modelRelationItem) {
             $this->$modelRelationItem();
         }
-
         return $this;
     }
 
@@ -417,7 +183,6 @@ class BaseModel
         if ($this->having) {
             $sql = $sql . " HAVING " . $this->having;
         }
-
         if ($this->orderBy) {
             $sql = $sql . " ORDER BY " . $this->orderBy;
         }
@@ -434,7 +199,6 @@ class BaseModel
                 $sql = $sql . $valueJoin['type'] . " JOIN " . $valueJoin['tableJoin'] . " ON " . $valueJoin["condition"];
             }
         }
-
         $this->dataWhere = $dataWhere;
         $this->sql = $sql;
     }
@@ -465,7 +229,6 @@ class BaseModel
             $whereValue[] = $valueWhere["column"] . $valueWhere['operator'] . ":" . $keyWhere;
             $dataWhere[$keyWhere] = $valueWhere['value'];
         }
-
         $placeholderValuesSql = implode('AND', $whereValue);
         return [$placeholderValuesSql, $dataWhere];
     }
@@ -497,13 +260,11 @@ class BaseModel
             $operator = null;
             $value = null;
         }
-
         $this->where[] = [
             'column' => $column,
             'operator' => $operator,
             'value' => $value,
         ];
-
         return $this;
     }
 
@@ -512,7 +273,6 @@ class BaseModel
         $this->limit = $limit;
         $this->offset = $offset;
         return $this;
-
     }
 
     public function join($tableJoin, $condition)
@@ -533,7 +293,6 @@ class BaseModel
         $user = 'root';
         $pass = 'root';
         $port = "3306";
-
         $dsn = "mysql:host=$host;dbname=$db;port=$port";
         try {
             $this->pdo = new \PDO($dsn, $user, $pass);
