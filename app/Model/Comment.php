@@ -7,6 +7,7 @@ namespace Model;
 class Comment extends BaseModel
 {
     protected $table = 'comments';
+    protected $primaryKey = 'id';
 
 
 }
