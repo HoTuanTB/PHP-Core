@@ -1,6 +1,6 @@
 <?php
 
-namespace Model;
+namespace Models;
 class BaseModel
 {
     protected $table;
@@ -8,7 +8,7 @@ class BaseModel
 
     private $where;
 
-    protected $select;
+    protected $select = "*";
 
     protected $groupBy;
 
@@ -30,10 +30,10 @@ class BaseModel
 
     protected $getName;
 
-//    public function __set($name, $value)
-//    {
-//        $this->attribute [$name] = $value;
-//    }
+    public function __set($name, $value)
+    {
+        $this->attribute [$name] = $value;
+    }
 
     public function __get($name)
     {
@@ -59,12 +59,8 @@ class BaseModel
         $dataExecute = $stmt->execute($data);
         if ($dataExecute) {
             $isId = $this->pdo->lastInsertId();
+            return $isId;
         }
-        if ($isId) {
-            echo $isId;
-//            return $isId;
-        }
-        return false;
     }
 
     public function insertValue($data)
@@ -81,15 +77,9 @@ class BaseModel
         $sql = "INSERT INTO $this->table ($columns) VALUES ($placeholdersSql)";
         $stmt = $this->pdo->prepare($sql);
         $dataExecute = $stmt->execute($value);
-
-
         if ($dataExecute) {
             $isId = $this->pdo->lastInsertId();
         }
-        if ($isId) {
-            echo $isId;
-        }
-        return false;
     }
 
     public function update($data)
@@ -113,14 +103,6 @@ class BaseModel
             $sql = "UPDATE $this->table SET $placeholdersSql WHERE $placeholdersSql";
         }
         $stmt = $this->pdo->prepare($sql)->execute($setValue);
-        if ($stmt) {
-            $isId = $this->pdo->lastInsertId();
-            echo "thanh cong" . $isId;
-        }
-        if ($isId) {
-            echo "that bai";
-        }
-        return false;
     }
 
     public function updateUp($data)
@@ -130,7 +112,6 @@ class BaseModel
         foreach ($data as $key => $value) {
             $setName[] = "$key" . '=:' . "$key";
         }
-
         $placeholdersSql = implode(', ', $setName);
         foreach ($this->where as $valueWhere) {
             $keyWhere = "where_" . $key;
@@ -140,15 +121,6 @@ class BaseModel
         $placeholderValuesSql = implode('AND', $whereValue);
         $sql = "UPDATE $this->table SET $placeholdersSql WHERE $placeholderValuesSql";
         $stmt = $this->pdo->prepare($sql)->execute($data);
-
-        if ($stmt) {
-            $isId = $this->pdo->lastInsertId();
-            echo "thanh cong" . $isId;
-        }
-        if ($isId) {
-            echo "that bai";
-        }
-        return false;
     }
 
     public function delete()
@@ -161,11 +133,6 @@ class BaseModel
         $where = implode(' AND ', $whereValue);
         $sql = "DELETE FROM $this->table WHERE $where";
         $stmt = $this->pdo->prepare($sql)->execute($data);
-        if ($stmt) {
-            echo "xoa thanh cong";
-        } else {
-            echo "xoa that bai";
-        }
     }
 
     public function get()
@@ -174,12 +141,7 @@ class BaseModel
         $stmt = $this->pdo->prepare($this->sql);
         $stmt->execute($this->dataWhere);
         $products = $stmt->fetchAll(\PDO::FETCH_OBJ);
-
-        echo "<pre>";
-        print_r($products);
-        die();
-
-
+        return $products;
     }
 
     public function first()
@@ -188,9 +150,6 @@ class BaseModel
         $stmt = $this->pdo->prepare($this->sql);
         $stmt->execute($this->dataWhere);
         $products = $stmt->fetch(\PDO::FETCH_ORI_FIRST);
-        echo "<pre>";
-        print_r($products);
-        die();
     }
 
     public function find($valuePrimaryKeys, $select = '*')
@@ -221,9 +180,6 @@ class BaseModel
         }
         $stmt->execute();
         $products = $stmt->fetchAll(\PDO::FETCH_ASSOC);
-        echo "<pre>";
-        print_r($products);
-        die();
     }
 
     public function save()
@@ -233,22 +189,11 @@ class BaseModel
             $functionGet = "get" . ucfirst($value);
             $attribute[$value] = $this->$functionGet();
         }
-
         $this->insert($attribute);
     }
 
     public function whereArray($conditionArrays)
     {
-//        var_dump(count($conditionArrays));
-//        die();
-//        if (is_array($conditionArrays) && count($conditionArrays) == 1) {
-//            $conditionArrays = [$conditionArrays];
-//        }
-
-//        echo "<pre>";
-//        print_r($conditionArrays);
-//        die();
-
         foreach ($conditionArrays as $key => $conditionArray) {
             $this->where[] = [
                 'column' => $conditionArray[0],
@@ -258,49 +203,6 @@ class BaseModel
         }
         return $this;
     }
-
-    public function test()
-    {
-        // 3 category -> N -> N + 1 -> 2
-        $sqlCategory = "SELECT * FROM category";
-        $stmt = $this->pdo->prepare($sqlCategory);
-        $stmt->execute();
-        // thuc thi sql
-        $categories = $stmt->fetchAll(PDO::FETCH_OBJ);
-        // lay id chinh de query sang bang phu
-        $idCategorys = [];
-        foreach ($categories as $categoryItem) {
-            $idCategorys[] = $categoryItem->id;
-        }
-        $idCategorysIn = implode(', ', $idCategorys);
-        // query lay data bang phu
-        $sqlProducts = "SELECT * FROM products WHERE category_id IN ($idCategorysIn)";
-        $stmt = $this->pdo->prepare($sqlProducts);
-        $stmt->execute();
-        // thuc thi sql
-        $products = $stmt->fetchAll(PDO::FETCH_OBJ);
-        // chan hoa du lieu
-        $productGroup = [];
-        foreach ($products as $productItem) {
-            $key = $productItem->category_id;
-            $productGroup[$key][] = $productItem;
-        }
-        foreach ($categories as $categoryItem) {
-            $categoryItem->product = $productGroup[$categoryItem->id];
-        }
-        echo "<pre>";
-        print_r($categories);
-        echo "<hr/>";
-    }
-
-    public function hasMany($tableClass, $foreign)
-    {
-        $class = new $tableClass();
-        var_dump($class->table);
-        die();
-        // xu li them o day
-    }
-
 
     public function with($modelRelation)
     {
@@ -419,7 +321,6 @@ class BaseModel
         $this->limit = $limit;
         $this->offset = $offset;
         return $this;
-
     }
 
     public function join($tableJoin, $condition)
@@ -436,7 +337,7 @@ class BaseModel
     public function connectDatabase()
     {
         $host = 'mysql';
-        $db = 'main';
+        $db = 'mvc_crud';
         $user = 'root';
         $pass = 'root';
         $port = "3306";
