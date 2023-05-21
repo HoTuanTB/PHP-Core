@@ -1,7 +1,8 @@
-<link rel="shortcut icon" href="data:image/x-icon;," type="image/x-icon">
 <?php
-require(__DIR__ . '/../app/Model/Product.php');
-$productModel = new \Model\Product();
+//echo session_save_path();
+
+//require(__DIR__ . '/../app/Model/Product.php');
+//$productModel = new \Model\Product();
 //$productModel->insertValue([
 //    "name" => "sanpham1",
 //    "price" => 100,
@@ -78,4 +79,4 @@ $productModel = new \Model\Product();
 //$productModel->comments();
 
 
-$productModel->select('*')->with('comments')->get();
+//$productModel->select('*')->with('comments')->get();
