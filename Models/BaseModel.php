@@ -99,30 +99,11 @@ class BaseModel
                 $whereValue[] = $valueWhere["column"] . $valueWhere['operator'] . "?";
                 $setValue[] = $valueWhere["value"];
             }
-            $placeholdersSql = implode('AND', $whereValue);
-            $sql = "UPDATE $this->table SET $placeholdersSql WHERE $placeholdersSql";
+            $placeholdersWhereSql = implode(' AND ', $whereValue);
+            $sql = "UPDATE $this->table SET $placeholdersSql WHERE $placeholdersWhereSql";
         }
         $stmt = $this->pdo->prepare($sql)->execute($setValue);
     }
-
-    public function updateUp($data)
-    {
-        $whereValue = [];
-        $setName = [];
-        foreach ($data as $key => $value) {
-            $setName[] = "$key" . '=:' . "$key";
-        }
-        $placeholdersSql = implode(', ', $setName);
-        foreach ($this->where as $valueWhere) {
-            $keyWhere = "where_" . $key;
-            $whereValue[] = $valueWhere["column"] . $valueWhere['operator'] . ":" . $keyWhere;
-            $data[$keyWhere] = $valueWhere['value'];
-        }
-        $placeholderValuesSql = implode('AND', $whereValue);
-        $sql = "UPDATE $this->table SET $placeholdersSql WHERE $placeholderValuesSql";
-        $stmt = $this->pdo->prepare($sql)->execute($data);
-    }
-
     public function delete()
     {
         foreach ($this->where as $key => $valueWhere) {
@@ -149,7 +130,8 @@ class BaseModel
         $this->query();
         $stmt = $this->pdo->prepare($this->sql);
         $stmt->execute($this->dataWhere);
-        $products = $stmt->fetch(\PDO::FETCH_ORI_FIRST);
+        $product = $stmt->fetch(\PDO::FETCH_ORI_FIRST);
+        return $product;
     }
 
     public function find($valuePrimaryKeys, $select = '*')
@@ -293,11 +275,11 @@ class BaseModel
     {
         $numArg = func_num_args();
         $arrArg = func_get_args();
-        if ($numArg == 2) {
+        if ($numArg === 2) {
             $column = $arrArg[0];
             $operator = '=';
             $value = $arrArg[1];
-        } elseif ($numArg == 3) {
+        } elseif ($numArg === 3) {
             $column = $arrArg[0];
             $operator = $arrArg[1];
             $value = $arrArg[2];

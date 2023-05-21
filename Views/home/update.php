@@ -6,26 +6,27 @@
 </head>
 <body>
 <div class="container">
-    <h2 class="mt-5">Create Product</h2>
+    <h2 class="mt-5">Update Product : <?php echo $product['id'] ?> </h2>
+    <img style="width: 200px" src=" <?php echo $product['image'] ?>">
     <br>
     <form method="post" action="" enctype="multipart/form-data">
         <div class="form-group">
             <label>Name</label>
-            <input name="name" type="text" class="form-control">
+            <input name="name" type="text" value="<?php echo $product['name'] ?>" class="form-control">
         </div>
         <div class="form-group">
             <label>Decription</label>
-            <input name="decription" type="text" class="form-control">
+            <input name="decription" value="<?php echo $product['decription'] ?>" type="text" class="form-control">
         </div>
         <div class="form-group">
             <label>Price</label>
-            <input name="price" type="text" class="form-control">
+            <input name="price" value="<?php echo $product['price'] ?>" type="text" class="form-control">
         </div>
         <div class="form-group">
             <label>Image</label>
             <input name="image" type="file" class="form-control">
         </div>
-        <button type="submit" class="btn btn-primary">Create</button>
+        <button type="submit" class="btn btn-info">Update</button>
     </form>
 </div>
 </body>
